@@ -4,9 +4,9 @@
 
 package com.rui;
 
-import cn.hutool.core.date.DateUtil;
-import cn.hutool.core.date.TimeInterval;
-import cn.hutool.core.lang.Console;
+import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.io.file.FileReader;
+import cn.hutool.core.io.file.FileWriter;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
@@ -18,13 +18,13 @@ import org.jsoup.select.Elements;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.util.*;
-import java.util.concurrent.CompletionService;
-import java.util.concurrent.CountDownLatch;
+import java.io.File;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static com.rui.Signin.resolveArgsToMap;
 
 /**
  * @author 8
@@ -32,6 +32,7 @@ import static com.rui.Signin.resolveArgsToMap;
 public class ok extends JFrame {
     public static final Pattern TBS = Pattern.compile(".tbs.:\\s*\"\\S*");
     public static final String TIEBA_SEED_URL = "http://tieba.baidu.com/f/like/mylike?pn=1";
+    public static final String AUTO_SAVE_TXT = "autoSave.txt";
     LinkedHashMap<String, String> headers = null;
     private String cookie;
     public ok() {
@@ -48,11 +49,17 @@ public class ok extends JFrame {
             UIManager.put(item+ ".font",f);
         }
         initComponents();
+        if (new File(AUTO_SAVE_TXT).exists()){
+            //默认UTF-8编码，可以在构造中传入第二个参数做为编码
+            FileReader fileReader = new FileReader(AUTO_SAVE_TXT);
+            cookie= fileReader.readString();
+            cookiesText.setText(cookie);
+        }
 //        设置可见
         setVisible(true);
         logTextArea.append("欢迎使用贴吧云签到GUI本地版.\n如果你需要源码,或者云签到版本,或者有什么建议,再或者单纯的想夸夸我,请前往\n  https://www.52pojie.cn/thread-1107576-1-1.html  \n如果你需要使用教程请前往\n   https://www.52pojie.cn/thread-1107576-1-1.html  \n");
         //设置关闭方式 如果不设置的话 关闭窗口之后不会退出程序
-        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
     }
 
     private void startActionPerformed(ActionEvent e) {
@@ -91,6 +98,14 @@ public class ok extends JFrame {
         if (Objects.isNull(cookie)) {
             logTextArea.append("用户的Cookie为空，无法继续执行\n");
             return siginEnum.SIGNIN_ERROR_COOKIE_IS_NULL;
+        }
+        if (save.isSelected()){
+            File file = new File(AUTO_SAVE_TXT);
+            if (!file.exists()){
+                FileUtil.touch(file);
+            }
+            FileWriter writer = new FileWriter(file);
+            writer.write(cookie);
         }
         if (Objects.isNull(url)) {
             url = TIEBA_SEED_URL;
@@ -173,6 +188,7 @@ public class ok extends JFrame {
         label1 = new JLabel();
         scrollPane2 = new JScrollPane();
         logTextArea = new JTextArea();
+        save = new JCheckBox();
 
         //======== this ========
         setTitle("\u8d34\u5427\u5168\u7b7e\u5230-52pojie");
@@ -188,7 +204,7 @@ public class ok extends JFrame {
             start.setText("\u5f00\u59cb\u7b7e\u5230");
             start.addActionListener(e -> startActionPerformed(e));
             panel1.add(start);
-            start.setBounds(195, 130, 140, 40);
+            start.setBounds(185, 130, 140, 40);
 
             //======== scrollPane1 ========
             {
@@ -217,6 +233,12 @@ public class ok extends JFrame {
             }
             panel1.add(scrollPane2);
             scrollPane2.setBounds(0, 190, 535, 170);
+
+            //---- save ----
+            save.setText("\u4fdd\u5b58Cookie");
+            save.setSelected(true);
+            panel1.add(save);
+            save.setBounds(new Rectangle(new Point(340, 140), save.getPreferredSize()));
 
             {
                 // compute preferred size
@@ -263,5 +285,6 @@ public class ok extends JFrame {
     private JLabel label1;
     private JScrollPane scrollPane2;
     private JTextArea logTextArea;
+    private JCheckBox save;
     // JFormDesigner - End of variables declaration  //GEN-END:variables
 }

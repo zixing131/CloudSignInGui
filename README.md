@@ -3,4 +3,4 @@
 
 详情及使用教程请见
 
-[https://github.com/Rui2450/yunqiandao/blob/master/README.md](https://github.com/Rui2450/yunqiandao/blob/master/README.md)
+[https://www.52pojie.cn/thread-1107576-1-1.html](https://www.52pojie.cn/thread-1107576-1-1.html)

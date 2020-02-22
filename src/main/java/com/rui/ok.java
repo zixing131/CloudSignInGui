@@ -82,7 +82,6 @@ public class ok extends JFrame {
             protected String doInBackground() {
                 cookie=cookiesText.getText().replace("Cookie: ", "").trim();
                 siginEnum allBa = getAllBa(null);
-                logTextArea.append(allBa.getMessage()+"\n");
                 if (allBa.isStats()){
                     start.setText("签到完成!");
                 }else {

@@ -1,10 +1,6 @@
 package com.rui;
 
 import cn.hutool.core.lang.Console;
-import cn.hutool.core.thread.ThreadUtil;
-import cn.hutool.json.JSON;
-import cn.hutool.json.JSONObject;
-import cn.hutool.json.JSONUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.rui.util.HttpRequestUtils;
@@ -18,17 +14,10 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.CompletionService;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * 所属项目:pa
@@ -47,22 +36,7 @@ import java.util.regex.Pattern;
  **/
 
 public class Signin {
-    public static final Pattern TBS = Pattern.compile(".tbs.:\\s*\"\\S*");
-    public static final String TIEBA_SEED_URL = "http://tieba.baidu.com/f/like/mylike?pn=1";
     private static final Log log = LogFactory.get();
-    public ArrayList<String> backToList = new ArrayList<>();
-    LinkedHashMap<String, String> headers = null;
-    private String cookie;
-
-    public Signin(String cookie) {
-        this.cookie = cookie.replace("Cookie: ", "").trim();
-    }
-
-    public Signin() {
-    }
-    public ArrayList<String> getBackToList() {
-        return backToList;
-    }
 
     /**
      * 将用户复制的请求头信息转换为linkedhashmap令程序可识别

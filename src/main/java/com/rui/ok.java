@@ -49,9 +49,10 @@ public class ok extends JFrame {
             UIManager.put(item+ ".font",f);
         }
         initComponents();
-        if (new File(AUTO_SAVE_TXT).exists()){
+        File file = new File(AUTO_SAVE_TXT);
+        if (file.exists()){
             //默认UTF-8编码，可以在构造中传入第二个参数做为编码
-            FileReader fileReader = new FileReader(AUTO_SAVE_TXT);
+            FileReader fileReader = new FileReader(file);
             cookie= fileReader.readString();
             cookiesText.setText(cookie);
         }

@@ -7,6 +7,9 @@
     <groupId>org.rui</groupId>
     <artifactId>CloudSignInGui</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>org.jsoup</groupId>
@@ -37,7 +40,7 @@
                         <manifest>
                             <!--                        你的主类的完整类名-->
                             <mainClass>
-                                com.rui
+                                com.rui.main
                             </mainClass>
                         </manifest>
 

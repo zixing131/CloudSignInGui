@@ -1,6 +1,5 @@
 package com.rui;
 
-import cn.hutool.core.lang.Console;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.rui.util.HttpRequestUtils;
@@ -49,7 +48,6 @@ public class Signin {
         LinkedHashMap<String, String> linkedHashMap = new LinkedHashMap<>();
         for (String s : split) {
             String[] strings = s.split(": ");
-            Console.log(strings);
             if (Objects.equals(strings[0], "Content-Length")) {
                 continue;
             }

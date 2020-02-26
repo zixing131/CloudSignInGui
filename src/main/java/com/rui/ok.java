@@ -37,37 +37,46 @@ public class ok extends JFrame {
     public static final String TIEBA_SEED_URL = "http://tieba.baidu.com/f/like/mylike?pn=1";
     public static final String AUTO_SAVE_TXT = "autoSave.txt";
     private static ThreadPoolExecutorUtil threadUtil;
+
     static {
-        threadUtil=new ThreadPoolExecutorUtil();
+        threadUtil = new ThreadPoolExecutorUtil();
     }
-    LinkedHashMap<String, String> headers = null;
+
+    volatile LinkedHashMap<String, String> headers = null;
     private String cookie;
+    // JFormDesigner - Variables declaration - DO NOT MODIFY  //GEN-BEGIN:variables
+    private JPanel panel1;
+    private JButton start;
+    private JScrollPane scrollPane1;
+    private JTextArea cookiesText;
+    private JLabel label1;
+    private JScrollPane scrollPane2;
+    private JTextArea logTextArea;
+    private JCheckBox save;
+    // JFormDesigner - End of variables declaration  //GEN-END:variables
+
     public ok() {
-        Font f = new Font("宋体",Font.PLAIN,12);
-        String[] names ={ "Label", "CheckBox", "PopupMenu","MenuItem", "CheckBoxMenuItem",
-                "JRadioButtonMenuItem","ComboBox", "Button", "Tree", "ScrollPane",
-                "TabbedPane", "EditorPane", "TitledBorder", "Menu", "TextArea",
-                "OptionPane", "MenuBar", "ToolBar", "ToggleButton", "ToolTip",
-                "ProgressBar", "TableHeader", "Panel", "List", "ColorChooser",
-                "PasswordField","TextField", "Table", "Label", "Viewport",
-                "RadioButtonMenuItem","RadioButton", "DesktopPane", "InternalFrame"
+        Font f = new Font("宋体", Font.PLAIN, 12);
+        String[] names = {"JPanel",
+                "JButton",
+                "JScrollPane",
+                "JTextArea",
+                "JLabel",
+                "JScrollPane",
+                "JTextArea",
+                "JCheckBox",
         };
         for (String item : names) {
-            UIManager.put(item+ ".font",f);
+            UIManager.put(item + ".font", f);
         }
         initComponents();
         File file = new File(AUTO_SAVE_TXT);
-        if (file.exists()){
-            //默认UTF-8编码，可以在构造中传入第二个参数做为编码
+        if (file.exists()) {
             FileReader fileReader = new FileReader(file);
-            cookie= fileReader.readString();
+            cookie = fileReader.readString();
             cookiesText.setText(cookie);
         }
-//        设置可见
-        setVisible(true);
         logTextArea.append("欢迎使用贴吧云签到GUI本地版.\n如果你需要源码,或者云签到版本,或者有什么建议,再或者单纯的想夸夸我,请前往\n  https://www.52pojie.cn/thread-1107576-1-1.html  \n如果你需要使用教程请前往\n   https://www.52pojie.cn/thread-1107576-1-1.html  \n");
-        //设置关闭方式 如果不设置的话 关闭窗口之后不会退出程序
-        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
     }
 
     private void startActionPerformed(ActionEvent e) {
@@ -88,14 +97,22 @@ public class ok extends JFrame {
              */
             @Override
             protected String doInBackground() {
-                cookie=cookiesText.getText().replace("Cookie: ", "").trim();
+                cookie = cookiesText.getText().replace("Cookie: ", "").trim();
                 TimeInterval timer = DateUtil.timer();
                 siginEnum allBa = getAllBa(null);
-                if (allBa.isStats()){
+                threadUtil.threadPool.shutdown();
+                try {
+                    threadUtil.threadPool.awaitTermination(1L, TimeUnit.HOURS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                while (!threadUtil.threadPool.isTerminated()) {
+                }
+                if (allBa.isStats()) {
                     start.setText("签到完成!");
-                    logTextArea.append("签到完成!共签到"+ threadUtil.atomicInteger+"个吧，耗时:"+timer.interval()+"毫秒\n");
-                }else {
-                    logTextArea.append(allBa.getMessage()+"\n");
+                    logTextArea.append("签到完成!共签到" + threadUtil.atomicInteger + "个吧，耗时:" + timer.interval() + "毫秒\n");
+                } else {
+                    logTextArea.append(allBa.getMessage() + "\n");
                     start.setText("签到失败!");
                 }
                 return null;
@@ -103,14 +120,15 @@ public class ok extends JFrame {
         };
         task.execute();
     }
+
     public siginEnum getAllBa(String url) {
         if (Objects.isNull(cookie)) {
             logTextArea.append("用户的Cookie为空，无法继续执行\n");
             return siginEnum.SIGNIN_ERROR_COOKIE_IS_NULL;
         }
-        if (save.isSelected()){
+        if (save.isSelected()) {
             File file = new File(AUTO_SAVE_TXT);
-            if (!file.exists()){
+            if (!file.exists()) {
                 FileUtil.touch(file);
             }
             FileWriter writer = new FileWriter(file);
@@ -119,22 +137,24 @@ public class ok extends JFrame {
         if (Objects.isNull(url)) {
             url = TIEBA_SEED_URL;
         }
-        headers = Signin.resolveHeadsToMap(
-                "Host: tieba.baidu.com\n" +
-                        "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0\n" +
-                        "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\n" +
-                        "Accept-Language: zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2\n" +
-                        "Accept-Encoding: gzip, deflate, br\n" +
-                        "Connection: keep-alive\n" +
-                        "Cookie: " + cookie + "\n" +
-                        "Upgrade-Insecure-Requests: 1\n" +
-                        "Cache-Control: max-age=0"
-        );
+        if (headers==null){
+            headers = Signin.resolveHeadsToMap(
+                    "Host: tieba.baidu.com\n" +
+                            "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0\n" +
+                            "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\n" +
+                            "Accept-Language: zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2\n" +
+                            "Accept-Encoding: gzip, deflate, br\n" +
+                            "Connection: keep-alive\n" +
+                            "Cookie: " + cookie + "\n" +
+                            "Upgrade-Insecure-Requests: 1\n" +
+                            "Cache-Control: max-age=0"
+            );
+        }
         String s = Signin.get(url, headers);
         Document doc = null;
         if (s != null) {
             doc = Jsoup.parse(s);
-        }else {
+        } else {
             logTextArea.append("错误！并未获取到任何贴吧\n");
         }
         Elements links = doc.select("a:not(.like_badge)[title]");
@@ -143,12 +163,13 @@ public class ok extends JFrame {
             return siginEnum.SIGNIN_ERROR_TEIBA_IS_NULL;
         }
         for (Element link : links) {
+            final String text = link.text();
             threadUtil.execute(new Runnable() {
                 @Override
                 public void run() {
-                    baidutieba(link.text());
+                    baidutieba(text);
                 }
-            });
+            }, text);
 //            ThreadUtil.execute(() -> {
 //                baidutieba(link.text());
 //            });
@@ -172,13 +193,6 @@ public class ok extends JFrame {
 //                set.forEach(e -> getAllBa("http://tieba.baidu.com/" + e));
 //            });
         }
-        threadUtil.threadPool.shutdown();
-        try {
-            threadUtil.threadPool.awaitTermination(1L, TimeUnit.HOURS);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        while (!threadUtil.threadPool.isTerminated()){ }
         return siginEnum.SIGNIN_SUUCCESS;
     }
 
@@ -209,6 +223,7 @@ public class ok extends JFrame {
             logTextArea.append(tablename + ",签到成功！\n");
         }
     }
+
     private void initComponents() {
         // JFormDesigner - Component initialization - DO NOT MODIFY  //GEN-BEGIN:initComponents
         panel1 = new JPanel();
@@ -223,6 +238,8 @@ public class ok extends JFrame {
         //======== this ========
         setTitle("\u8d34\u5427\u5168\u7b7e\u5230-52pojie");
         setIconImage(new ImageIcon(getClass().getResource("/image/\u7b7e\u5230.png")).getImage());
+        setVisible(true);
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         Container contentPane = getContentPane();
         contentPane.setLayout(null);
 
@@ -306,15 +323,4 @@ public class ok extends JFrame {
         setLocationRelativeTo(getOwner());
         // JFormDesigner - End of component initialization  //GEN-END:initComponents
     }
-
-    // JFormDesigner - Variables declaration - DO NOT MODIFY  //GEN-BEGIN:variables
-    private JPanel panel1;
-    private JButton start;
-    private JScrollPane scrollPane1;
-    private JTextArea cookiesText;
-    private JLabel label1;
-    private JScrollPane scrollPane2;
-    private JTextArea logTextArea;
-    private JCheckBox save;
-    // JFormDesigner - End of variables declaration  //GEN-END:variables
 }

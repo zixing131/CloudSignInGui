@@ -1,5 +1,7 @@
 package com.rui.util;
 
+import cn.hutool.core.lang.Console;
+
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -25,11 +27,15 @@ public class ThreadPoolExecutorUtil {
             TimeUnit.SECONDS,
             new LinkedBlockingDeque<>(1),
             Executors.defaultThreadFactory(),
-            new ThreadPoolExecutor.CallerRunsPolicy());;
+            new ThreadPoolExecutor.CallerRunsPolicy());
     public  AtomicInteger atomicInteger=new AtomicInteger();
 
-    public void execute(Runnable runnable){
+    public void execute(Runnable runnable,String name){
         atomicInteger.incrementAndGet();
+        Console.log(atomicInteger.get()+"\t"+name);
+        threadPool.execute(runnable);
+    }
+    public void execute(Runnable runnable){
         threadPool.execute(runnable);
     }
 }

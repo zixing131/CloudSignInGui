@@ -4,12 +4,14 @@
 
 package com.rui;
 
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.date.TimeInterval;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.file.FileReader;
 import cn.hutool.core.io.file.FileWriter;
-import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
+import com.rui.util.ThreadPoolExecutorUtil;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -23,6 +25,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,6 +36,10 @@ public class ok extends JFrame {
     public static final Pattern TBS = Pattern.compile(".tbs.:\\s*\"\\S*");
     public static final String TIEBA_SEED_URL = "http://tieba.baidu.com/f/like/mylike?pn=1";
     public static final String AUTO_SAVE_TXT = "autoSave.txt";
+    private static ThreadPoolExecutorUtil threadUtil;
+    static {
+        threadUtil=new ThreadPoolExecutorUtil();
+    }
     LinkedHashMap<String, String> headers = null;
     private String cookie;
     public ok() {
@@ -82,9 +89,11 @@ public class ok extends JFrame {
             @Override
             protected String doInBackground() {
                 cookie=cookiesText.getText().replace("Cookie: ", "").trim();
+                TimeInterval timer = DateUtil.timer();
                 siginEnum allBa = getAllBa(null);
                 if (allBa.isStats()){
                     start.setText("签到完成!");
+                    logTextArea.append("签到完成!共签到"+ threadUtil.atomicInteger+"个吧，耗时:"+timer.interval()+"毫秒\n");
                 }else {
                     logTextArea.append(allBa.getMessage()+"\n");
                     start.setText("签到失败!");
@@ -134,9 +143,15 @@ public class ok extends JFrame {
             return siginEnum.SIGNIN_ERROR_TEIBA_IS_NULL;
         }
         for (Element link : links) {
-            ThreadUtil.execute(() -> {
-                baidutieba(link.text());
+            threadUtil.execute(new Runnable() {
+                @Override
+                public void run() {
+                    baidutieba(link.text());
+                }
             });
+//            ThreadUtil.execute(() -> {
+//                baidutieba(link.text());
+//            });
         }
         Elements select = doc.select(".pagination>a");
         if (!Objects.equals(select.size(), 0) && Objects.equals(select.last().text(), "尾页")) {
@@ -145,10 +160,25 @@ public class ok extends JFrame {
                 String href = e.attr("href");
                 set.add(href);
             });
-            ThreadUtil.execute(() -> {
-                set.forEach(e -> getAllBa("http://tieba.baidu.com/" + e));
-            });
+            for (String e : set) {
+                threadUtil.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        getAllBa("http://tieba.baidu.com/" + e);
+                    }
+                });
+            }
+//            ThreadUtil.execute(() -> {
+//                set.forEach(e -> getAllBa("http://tieba.baidu.com/" + e));
+//            });
         }
+        threadUtil.threadPool.shutdown();
+        try {
+            threadUtil.threadPool.awaitTermination(1L, TimeUnit.HOURS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        while (!threadUtil.threadPool.isTerminated()){ }
         return siginEnum.SIGNIN_SUUCCESS;
     }
 

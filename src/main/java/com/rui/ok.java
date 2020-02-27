@@ -182,12 +182,14 @@ public class ok extends JFrame {
                 set.add(href);
             });
             for (String e : set) {
-                threadUtil.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        getAllBa("http://tieba.baidu.com/" + e);
-                    }
-                });
+                getAllBa("http://tieba.baidu.com/" + e);
+
+//                threadUtil.execute(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        getAllBa("http://tieba.baidu.com/" + e);
+//                    }
+//                });
             }
 //            ThreadUtil.execute(() -> {
 //                set.forEach(e -> getAllBa("http://tieba.baidu.com/" + e));

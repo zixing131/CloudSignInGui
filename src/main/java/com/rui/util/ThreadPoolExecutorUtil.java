@@ -1,6 +1,7 @@
 package com.rui.util;
 
 import cn.hutool.core.lang.Console;
+import cn.hutool.core.thread.ThreadUtil;
 
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -21,21 +22,41 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @date 2020/2/26 -下午 7:45
  **/
 public class ThreadPoolExecutorUtil {
-    public  ExecutorService threadPool=new ThreadPoolExecutor(0,
+    public ExecutorService threadPool = new ThreadPoolExecutor(0,
             Integer.MAX_VALUE,
             1L,
             TimeUnit.SECONDS,
             new LinkedBlockingDeque<>(1),
             Executors.defaultThreadFactory(),
             new ThreadPoolExecutor.CallerRunsPolicy());
-    public  AtomicInteger atomicInteger=new AtomicInteger();
+    public AtomicInteger atomicInteger = new AtomicInteger();
 
-    public void execute(Runnable runnable,String name){
+    public void updateIncrement() {
         atomicInteger.incrementAndGet();
-        Console.log(atomicInteger.get()+"\t"+name);
+    }
+
+    public void execute(Runnable runnable) {
         threadPool.execute(runnable);
     }
-    public void execute(Runnable runnable){
-        threadPool.execute(runnable);
+
+    public static void main(String[] args) {
+        ThreadPoolExecutorUtil threadPoolExecutorUtil = new ThreadPoolExecutorUtil();
+        for (int i = 0; i < 5000; i++) {
+            Runnable task = new Runnable() {
+                @Override
+                public void run() {
+                    ThreadUtil.sleep(1000);
+                   Console.log("测试");
+                }
+            };
+            threadPoolExecutorUtil.threadPool.execute(task);
+        }
+        threadPoolExecutorUtil.threadPool.shutdown();
+        try {
+            threadPoolExecutorUtil.threadPool.awaitTermination(1, TimeUnit.HOURS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
+
 }

@@ -1,28 +1,20 @@
 package com.rui.util;
 
-import cn.hutool.core.lang.Console;
-import org.apache.http.*;
-import org.apache.http.client.CookieStore;
+import org.apache.http.HttpEntityEnclosingRequest;
+import org.apache.http.HttpRequest;
+import org.apache.http.NoHttpResponseException;
 import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
-import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * 所属项目:pa
@@ -40,6 +32,16 @@ import java.util.Map;
  * @date 2020/2/8 -下午 10:56
  **/
 public class HttpRequestUtils {
+    private static PoolingHttpClientConnectionManager connectionManager;
+    static {
+        connectionManager = new PoolingHttpClientConnectionManager();
+        // 整个连接池最大连接数
+        connectionManager.setMaxTotal(1000);
+        // 可用空闲连接过期时间,重用空闲连接时会先检查是否空闲时间超过这个时间，如果超过，释放socket重新建立
+        connectionManager.setValidateAfterInactivity(50000);
+        // 每路由最大连接数，默认值是200
+        connectionManager.setDefaultMaxPerRoute(1000);
+    }
     /**
      * 获取Http客户端连接对象
      *
@@ -48,11 +50,12 @@ public class HttpRequestUtils {
     public static CloseableHttpClient getHttpClient() {
         // 创建Http请求配置参数
         RequestConfig requestConfig = RequestConfig.custom()
-                // 获取连接超时时间
+                // 连接超时时间
                 .setConnectionRequestTimeout(60000)
                 // 请求超时时间
                 .setConnectTimeout(60000)
-                .setRedirectsEnabled(true)//默认允许自动重定向
+                //默认允许自动重定向
+                .setRedirectsEnabled(true)
                 // 响应超时时间
                 .setSocketTimeout(60000)
                 .build();
@@ -102,54 +105,12 @@ public class HttpRequestUtils {
         return HttpClients.custom()
                 // 把请求相关的超时信息设置到连接客户端
                 .setDefaultRequestConfig(requestConfig)
+//                设置连接管理器
+                .setConnectionManager(connectionManager)
                 // 把请求重试设置到连接客户端
                 .setRetryHandler(retry)
+                .setConnectionManagerShared(true)
                 .build();
-    }
-
-    public static List<Cookie> getResponseCookie(String url,LinkedHashMap<String, String> heads) throws IOException {
-        CookieStore store = new BasicCookieStore();
-        CloseableHttpClient httpClient = HttpClients.custom().setDefaultCookieStore(store).build();
-        HttpGet get = new HttpGet(url);
-        if (heads != null) {
-            for (Map.Entry<String, String> entry : heads.entrySet()) {
-                get.setHeader(entry.getKey(), entry.getValue());
-            }
-        }
-        HttpResponse response = httpClient.execute(get);
-        Console.log(EntityUtils.toString(response.getEntity(), "UTF-8"));
-        response.getEntity();
-        return store.getCookies();
-    }
-
-    /**
-     * 获取重定向地址
-     * @param uri 原始url
-     * @param headers  请求头
-     * @return 重定向后的地址
-     */
-    public static String getRedirectUrl(String uri, LinkedHashMap<String, String> headers){
-        try (CloseableHttpClient client = HttpRequestUtils.getHttpClient()){
-            HttpGet httpGet = new HttpGet(uri);
-            httpGet.setConfig(RequestConfig.custom()
-                    .setRedirectsEnabled(false)
-                    .build());
-            if (headers!=null) {
-                for (Map.Entry<String, String> entry : headers.entrySet()) {
-                    httpGet.setHeader(entry.getKey(), entry.getValue());
-                }
-            }
-            try (CloseableHttpResponse response = client.execute(httpGet)) {
-                Header h = response.getFirstHeader("Location");
-                if (h != null) {
-                    System.out.println("重定向地址：" + h.getValue());
-                    return h.getValue();
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return "";
     }
 
 }

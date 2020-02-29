@@ -9,6 +9,7 @@ import cn.hutool.core.date.TimeInterval;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.file.FileReader;
 import cn.hutool.core.io.file.FileWriter;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.rui.util.ThreadPoolExecutorUtil;
@@ -21,6 +22,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Objects;
@@ -36,6 +38,8 @@ public class ok extends JFrame {
     public static final Pattern TBS = Pattern.compile(".tbs.:\\s*\"\\S*");
     public static final String TIEBA_SEED_URL = "http://tieba.baidu.com/f/like/mylike?pn=1";
     public static final String AUTO_SAVE_TXT = "autoSave.txt";
+    private static final String VERSION = "贴吧签到-7.7z";
+    private static final String UPDATEURL = "https://www.lanzous.com/b0ddsnu8b";
     private static ThreadPoolExecutorUtil threadUtil;
 
     static {
@@ -56,6 +60,12 @@ public class ok extends JFrame {
     // JFormDesigner - End of variables declaration  //GEN-END:variables
 
     public ok() {
+        threadUtil.execute(new Runnable() {
+            @Override
+            public void run() {
+                checkForUpdates();
+            }
+        });
         Font f = new Font("宋体", Font.PLAIN, 12);
         String[] names = {"JPanel",
                 "JButton",
@@ -77,6 +87,35 @@ public class ok extends JFrame {
             cookiesText.setText(cookie);
         }
         logTextArea.append("欢迎使用贴吧云签到GUI本地版.\n如果你需要源码,或者云签到版本,或者有什么建议,再或者单纯的想夸夸我,请前往\n  https://www.52pojie.cn/thread-1107576-1-1.html  \n如果你需要使用教程请前往\n   https://www.52pojie.cn/thread-1107576-1-1.html  \n");
+    }
+
+    private void checkForUpdates() {
+        String s = null;
+        try {
+            s = Signin.get("https://raw.githubusercontent.com/Rui2450/CloudSignInGui/master/new", null);
+            if (StrUtil.contains(s, VERSION)) {
+                int result = JOptionPane.showConfirmDialog(
+                        this,
+                        "版本有更新，是否前去更新？",
+                        "提示",
+                        JOptionPane.YES_NO_OPTION
+                );
+                if (result == 0) {
+                    Desktop desktop = Desktop.getDesktop();
+                    if (Desktop.isDesktopSupported() && desktop.isSupported(Desktop.Action.BROWSE)) {
+                        try {
+                            Runtime.getRuntime().exec("explorer " + UPDATEURL);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logTextArea.append("链接到GitHub检测更新失败\n");
+        }
+
     }
 
     private void startActionPerformed(ActionEvent e) {
@@ -105,8 +144,6 @@ public class ok extends JFrame {
                     threadUtil.threadPool.awaitTermination(1L, TimeUnit.HOURS);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
-                }
-                while (!threadUtil.threadPool.isTerminated()) {
                 }
                 if (allBa.isStats()) {
                     start.setText("签到完成!");
@@ -137,7 +174,7 @@ public class ok extends JFrame {
         if (Objects.isNull(url)) {
             url = TIEBA_SEED_URL;
         }
-        if (headers==null){
+        if (headers == null) {
             headers = Signin.resolveHeadsToMap(
                     "Host: tieba.baidu.com\n" +
                             "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0\n" +
@@ -169,7 +206,7 @@ public class ok extends JFrame {
                 public void run() {
                     baidutieba(text);
                 }
-            }, text);
+            });
 //            ThreadUtil.execute(() -> {
 //                baidutieba(link.text());
 //            });
@@ -183,7 +220,6 @@ public class ok extends JFrame {
             });
             for (String e : set) {
                 getAllBa("http://tieba.baidu.com/" + e);
-
 //                threadUtil.execute(new Runnable() {
 //                    @Override
 //                    public void run() {
@@ -219,6 +255,7 @@ public class ok extends JFrame {
         String post = Signin.post("https://tieba.baidu.com/sign/add", headers, args);
         JSONObject jsonObject = JSONUtil.parseObj(post);
         Object no = jsonObject.get("no");
+        threadUtil.updateIncrement();
         if (Objects.equals(no, 1101)) {
             logTextArea.append(tablename + ",您今日已经签到\n");
         } else if (Objects.equals(no, 0)) {
@@ -292,7 +329,7 @@ public class ok extends JFrame {
             {
                 // compute preferred size
                 Dimension preferredSize = new Dimension();
-                for(int i = 0; i < panel1.getComponentCount(); i++) {
+                for (int i = 0; i < panel1.getComponentCount(); i++) {
                     Rectangle bounds = panel1.getComponent(i).getBounds();
                     preferredSize.width = Math.max(bounds.x + bounds.width, preferredSize.width);
                     preferredSize.height = Math.max(bounds.y + bounds.height, preferredSize.height);
@@ -310,7 +347,7 @@ public class ok extends JFrame {
         {
             // compute preferred size
             Dimension preferredSize = new Dimension();
-            for(int i = 0; i < contentPane.getComponentCount(); i++) {
+            for (int i = 0; i < contentPane.getComponentCount(); i++) {
                 Rectangle bounds = contentPane.getComponent(i).getBounds();
                 preferredSize.width = Math.max(bounds.x + bounds.width, preferredSize.width);
                 preferredSize.height = Math.max(bounds.y + bounds.height, preferredSize.height);
